@@ -12,32 +12,31 @@ import others from '../../assets/others.png';
 
 ChartJS.register(CategoryScale, LinearScale, LineElement, PointElement, ArcElement, Title, Tooltip, Legend);
 
-// Define severity thresholds
-const SEVERITY_THRESHOLDS = {
-  HIGH: 101,  // 100+ reports is considered High severity
-  MEDIUM: 51-100, // 51-100 reports is considered Medium severity
-  LOW: 1-50     // 1-50 reports is considered Low severity
-};
-
 // Map report types to corresponding icons
 const getIncidentImage = (type) => {
   const normalizedType = type.trim().toUpperCase();
 
   if (normalizedType === 'FIRE') return fire;
-  if (normalizedType === 'THIEF') return thief;
+  if (normalizedType === 'CRIME OR THIEF') return thief;
   if (normalizedType === 'NOISE') return noise;
   if (normalizedType === 'ACCIDENT') return accident;
   return others; // Default to 'OTHERS' if no match
 };
 
 const YearlyAnalytics = () => {
-  const [data, setData] = useState([]);
+  const [data, setData] = useState({
+    noiseCounts: [],
+    thiefCounts: [],
+    fireCounts: [],
+    accidentCounts: [],
+    othersCounts: [],
+  });
   const [currentYear, setCurrentYear] = useState(2024);
   const [totalReports, setTotalReports] = useState(0);
   const [mostCommonReport, setMostCommonReport] = useState({ type: 'Noise', count: 0 });
-  const [severityStats, setSeverityStats] = useState({ high: 0, medium: 0, low: 0 });
+  const [severityStats, setSeverityStats] = useState({ fire: 0, theft: 0, noise: 0, accident: 0, others: 0 });
   const [resolutionStats, setResolutionStats] = useState({ resolved: 0, unresolved: 0 });
-
+  
   const fetchData = async (year) => {
     const reportRef = ref(database, 'History');
 
@@ -48,22 +47,21 @@ const YearlyAnalytics = () => {
       if (reportData) {
         const reportList = Object.values(reportData);
         let totalCount = 0;
-        let noiseCount = 0, theftCount = 0, fireCount = 0, accidentCount = 0;
+        let noiseCount = 0, theftCount = 0, fireCount = 0, accidentCount = 0, othersCount = 0;
         let resolvedCount = 0, unresolvedCount = 0;
-        let highSeverityCount = 0, mediumSeverityCount = 0, lowSeverityCount = 0;
 
         reportList.forEach(report => {
           const reportDate = new Date(report.timestamp);
           const reportYear = reportDate.getFullYear();
 
           if (reportYear === year) {
-            totalCount++;  // Total report count
-
+            totalCount++;
             // Count types of incidents
             if (report.type === 'NOISE') noiseCount++;
-            else if (report.type === 'THIEF') theftCount++;
+            else if (report.type === 'CRIME OR THIEF') theftCount++;
             else if (report.type === 'FIRE') fireCount++;
             else if (report.type === 'ACCIDENT') accidentCount++;
+            else othersCount++; // Count for 'OTHERS'
 
             // Check the success field for resolution status
             if (report.success === 'Yes') {
@@ -71,39 +69,34 @@ const YearlyAnalytics = () => {
             } else {
               unresolvedCount++;
             }
-
-            // Count severity levels
-            if (report.severity === 'HIGH') highSeverityCount++;
-            else if (report.severity === 'MEDIUM') mediumSeverityCount++;
-            else if (report.severity === 'LOW') lowSeverityCount++;
           }
         });
 
         setTotalReports(totalCount);
-
+        
         // Determine the most common report type
-        const mostCommon = Math.max(noiseCount, theftCount, fireCount, accidentCount);
+        const mostCommon = Math.max(noiseCount, theftCount, fireCount, accidentCount, othersCount);
         if (mostCommon === noiseCount) setMostCommonReport({ type: 'Noise', count: noiseCount });
         else if (mostCommon === theftCount) setMostCommonReport({ type: 'Thief', count: theftCount });
         else if (mostCommon === fireCount) setMostCommonReport({ type: 'Fire', count: fireCount });
-        else setMostCommonReport({ type: 'Accident', count: accidentCount });
+        else if (mostCommon === accidentCount) setMostCommonReport({ type: 'Accident', count: accidentCount });
+        else setMostCommonReport({ type: 'Others', count: othersCount });
 
-        // Calculate severity based on the number of reports (entire year)
-        const highSeverityReports = [fireCount, theftCount, noiseCount, accidentCount].filter(count => count >= SEVERITY_THRESHOLDS.HIGH).length;
-        const mediumSeverityReports = [fireCount, theftCount, noiseCount, accidentCount].filter(count => count >= SEVERITY_THRESHOLDS.MEDIUM && count < SEVERITY_THRESHOLDS.HIGH).length;
-        const lowSeverityReports = [fireCount, theftCount, noiseCount, accidentCount].filter(count => count < SEVERITY_THRESHOLDS.MEDIUM && count >= SEVERITY_THRESHOLDS.LOW).length;
-
-        setSeverityStats({ high: highSeverityReports, medium: mediumSeverityReports, low: lowSeverityReports });
+        // Calculate severity levels for the whole year
+        let incidentCounts = { fire: fireCount, theft: theftCount, noise: noiseCount, accident: accidentCount, others: othersCount };
+        
+        setSeverityStats(incidentCounts);
         setResolutionStats({ resolved: resolvedCount, unresolved: unresolvedCount });
 
         // Data for the line chart (per month)
-        const noiseCounts = [], thiefCounts = [], fireCounts = [], accidentCounts = [];
+        const noiseCounts = [], thiefCounts = [], fireCounts = [], accidentCounts = [], othersCounts = [];
         for (let month = 0; month < 12; month++) {
           const monthlyReports = reportList.filter(r => new Date(r.timestamp).getMonth() === month && new Date(r.timestamp).getFullYear() === year);
           noiseCounts.push(monthlyReports.filter(r => r.type === 'NOISE').length);
-          thiefCounts.push(monthlyReports.filter(r => r.type === 'THIEF').length);
+          thiefCounts.push(monthlyReports.filter(r => r.type === 'CRIME OR THIEF').length);
           fireCounts.push(monthlyReports.filter(r => r.type === 'FIRE').length);
           accidentCounts.push(monthlyReports.filter(r => r.type === 'ACCIDENT').length);
+          othersCounts.push(monthlyReports.filter(r => r.type === 'OTHERS').length); // Count for 'OTHERS'
         }
 
         setData({
@@ -111,6 +104,7 @@ const YearlyAnalytics = () => {
           thiefCounts,
           fireCounts,
           accidentCounts,
+          othersCounts,
         });
       }
     } catch (error) {
@@ -126,12 +120,28 @@ const YearlyAnalytics = () => {
     setCurrentYear(parseInt(e.target.value, 10));
   };
 
+  const getSeverityLabels = (incidentCounts) => {
+    const incidentArray = Object.entries(incidentCounts)
+      .filter(([_, count]) => count > 0); // Filter out zero counts
+  
+    incidentArray.sort((a, b) => b[1] - a[1]); // Sort by count
+  
+    let severityLabels = { high: '', medium: '', low: '' };
+    if (incidentArray.length > 0) severityLabels.high = incidentArray[0][0]; // Highest report
+    if (incidentArray.length > 1) severityLabels.medium = incidentArray[1][0]; // Second highest
+    if (incidentArray.length > 2) severityLabels.low = incidentArray[2][0]; // Third highest
+  
+    return severityLabels;
+  };
+
+  const severityLabels = getSeverityLabels(severityStats);
+
   const chartData = {
     labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
     datasets: [
       {
         label: 'Noise',
-        data: data.noiseCounts || [],
+        data: data.noiseCounts,
         borderColor: 'rgba(255, 99, 132, 1)',
         backgroundColor: 'rgba(255, 99, 132, 0.2)',
         fill: true,
@@ -139,7 +149,7 @@ const YearlyAnalytics = () => {
       },
       {
         label: 'Thief',
-        data: data.thiefCounts || [],
+        data: data.thiefCounts,
         borderColor: 'rgba(54, 162, 235, 1)',
         backgroundColor: 'rgba(54, 162, 235, 0.2)',
         fill: true,
@@ -147,7 +157,7 @@ const YearlyAnalytics = () => {
       },
       {
         label: 'Fire',
-        data: data.fireCounts || [],
+        data: data.fireCounts,
         borderColor: 'rgba(255, 206, 86, 1)',
         backgroundColor: 'rgba(255, 206, 86, 0.2)',
         fill: true,
@@ -155,9 +165,17 @@ const YearlyAnalytics = () => {
       },
       {
         label: 'Accident',
-        data: data.accidentCounts || [],
+        data: data.accidentCounts,
         borderColor: 'rgba(75, 192, 192, 1)',
         backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        fill: true,
+        tension: 0.4,
+      },
+      {
+        label: 'Others',
+        data: data.othersCounts,
+        borderColor: 'rgba(153, 102, 255, 1)',
+        backgroundColor: 'rgba(153, 102, 255, 0.2)',
         fill: true,
         tension: 0.4,
       },
@@ -165,10 +183,13 @@ const YearlyAnalytics = () => {
   };
 
   const severityPieData = {
-    labels: ['High (100+ Reports)', 'Medium (51-100 Reports)', 'Low (1-50 Reports)'],
+    labels: ['Fire', 'Crime or Theft', 'Noise', 'Accident', 'Others'].filter((_, index) => {
+      const counts = [severityStats.fire, severityStats.theft, severityStats.noise, severityStats.accident, severityStats.others];
+      return counts[index] > 0;
+    }),
     datasets: [{
-      data: [severityStats.high, severityStats.medium, severityStats.low],
-      backgroundColor: ['#FF0000', '#FFA500', '#FFFF00'],
+      data: [severityStats.fire, severityStats.theft, severityStats.noise, severityStats.accident, severityStats.others].filter(count => count > 0),
+      backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#FF9F40'],
     }]
   };
 
@@ -187,14 +208,6 @@ const YearlyAnalytics = () => {
       legend: {
         display: false,
       },
-      datalabels: {
-        color: 'white',
-        font: {
-          weight: 'bold',
-          size: 12,
-        },
-        formatter: (value) => `${value}%`,
-      },
     }
   };
   
@@ -205,15 +218,49 @@ const YearlyAnalytics = () => {
       legend: {
         display: false,
       },
-      datalabels: {
-        color: 'black',
-        font: {
-          weight: 'bold',
-          size: 12,
-        },
-        formatter: (value) => `${value}%`,
-      },
     }
+  };
+
+  const pieOptions3 = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'right',
+        labels: {
+          color: 'white',
+          font: {
+            size: 12,
+            weight: 'bold',
+          },
+          boxWidth: 20,
+          padding: 15,
+          generateLabels: () => {
+            const colors = {
+              fire: '#FF6384',
+              theft: '#36A2EB',
+              noise: '#FFCE56',
+              accident: '#4BC0C0',
+              others: '#FF9F40',
+            };
+            return [
+              { text: `High: ${severityLabels.high}`, fillStyle: colors[severityLabels.high], fontColor: 'white' },
+              { text: `Medium: ${severityLabels.medium}`, fillStyle: colors[severityLabels.medium] },
+              { text: `Low: ${severityLabels.low}`, fillStyle: colors[severityLabels.low] },
+            ];
+          },
+        },
+      },
+      datalabels: {
+        color: 'white',
+        font: { weight: 'bold', size: 9 },
+        formatter: (value, context) => {
+          const total = context.chart._metasets[0].total;
+          const percentage = ((value / total) * 100).toFixed(0);
+          return `${percentage}%`;
+        },
+      },
+    },
   };
 
   return (
@@ -233,7 +280,7 @@ const YearlyAnalytics = () => {
         </div>
 
         {/* Line Chart */}
-        <div className="w-[100rem] max-w-6xl" style={{ height: '260px', marginBottom:'2rem' }}>
+        <div className="w-[100rem] max-w-6xl" style={{ height: '260px', marginBottom: '2rem' }}>
           <Line data={chartData} options={pieOptions2} />
         </div>
 
@@ -263,7 +310,7 @@ const YearlyAnalytics = () => {
           <div className="bg-[#8A252C] p-4 rounded-lg shadow-md h-[165px]">
             <h2 className="text-sm font-bold text-white mb-2">Incident Severity</h2>
             <div className="w-full h-[100px] flex justify-center items-center">
-              <Pie data={severityPieData} options={pieOptions2} />
+              <Pie data={severityPieData} options={pieOptions3} />
             </div>
           </div>
 

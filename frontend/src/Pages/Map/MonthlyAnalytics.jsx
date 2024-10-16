@@ -15,15 +15,7 @@ const MonthlyAnalytics = () => {
   const [totalReports, setTotalReports] = useState(0);
   const [resolvedReports, setResolvedReports] = useState(0);
   const [unresolvedReports, setUnresolvedReports] = useState(0);
-  const [severityStats, setSeverityStats] = useState({ high: 0, medium: 0, low: 0 });
-  const [reportStats, setReportStats] = useState({ fire: 0, theft: 0, noise: 0, accident: 0, others: 0 });
-
-  // Severity thresholds
-  const SEVERITY_THRESHOLDS = {
-    HIGH: 10,  // 10 or more reports is considered High severity
-    MEDIUM: 6, // 6-9 reports is considered Medium severity
-    LOW: 1     // 1-5 reports is considered Low severity
-  };
+  const [severityStats, setSeverityStats] = useState({});
 
   const fetchData = async (month, year) => {
     const historyRef = ref(database, 'History');
@@ -33,7 +25,7 @@ const MonthlyAnalytics = () => {
 
       if (historyData) {
         const historyList = Object.values(historyData);
-        let fireCount = 0, theftCount = 0, noiseCount = 0, accidentCount = 0, othersCount = 0;
+        let incidentCounts = { fire: 0, theft: 0, noise: 0, accident: 0, others: 0 };
         let totalCount = 0;
         let resolvedCount = 0;
         let unresolvedCount = 0;
@@ -42,28 +34,21 @@ const MonthlyAnalytics = () => {
           const reportDate = new Date(report.timestamp);
           if (reportDate.getMonth() === month && reportDate.getFullYear() === year) {
             totalCount++;
-            if (report.type === 'FIRE') fireCount++;
-            else if (report.type === 'CRIME OR THIEF') theftCount++;
-            else if (report.type === 'NOISE') noiseCount++;
-            else if (report.type === 'ACCIDENT') accidentCount++;
-            else othersCount++;
+            if (report.type === 'FIRE') incidentCounts.fire++;
+            else if (report.type === 'CRIME OR THIEF') incidentCounts.theft++;
+            else if (report.type === 'NOISE') incidentCounts.noise++;
+            else if (report.type === 'ACCIDENT') incidentCounts.accident++;
+            else incidentCounts.others++;
 
             if (report.success === "Yes") resolvedCount++;
             else unresolvedCount++;
           }
         });
 
-        setReportStats({ fire: fireCount, theft: theftCount, noise: noiseCount, accident: accidentCount, others: othersCount });
+        setSeverityStats(incidentCounts);
         setTotalReports(totalCount);
         setResolvedReports(resolvedCount);
         setUnresolvedReports(unresolvedCount);
-
-        // Calculate severity based on the number of reports
-        const highSeverityCount = [fireCount, theftCount, noiseCount, accidentCount, othersCount].filter(count => count >= SEVERITY_THRESHOLDS.HIGH).length;
-        const mediumSeverityCount = [fireCount, theftCount, noiseCount, accidentCount, othersCount].filter(count => count >= SEVERITY_THRESHOLDS.MEDIUM && count < SEVERITY_THRESHOLDS.HIGH).length;
-        const lowSeverityCount = [fireCount, theftCount, noiseCount, accidentCount, othersCount].filter(count => count < SEVERITY_THRESHOLDS.MEDIUM && count >= SEVERITY_THRESHOLDS.LOW).length;
-
-        setSeverityStats({ high: highSeverityCount, medium: mediumSeverityCount, low: lowSeverityCount });
       }
     } catch (error) {
       console.error('Error fetching data', error);
@@ -74,14 +59,27 @@ const MonthlyAnalytics = () => {
     fetchData(currentMonth, currentYear);
   }, [currentMonth, currentYear]);
 
-  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-  const handleMonthChange = (event) => setCurrentMonth(parseInt(event.target.value, 10));
+  // Function to calculate the severity labels
+  const getSeverityLabels = (incidentCounts) => {
+    const incidentArray = Object.entries(incidentCounts);
+    incidentArray.sort((a, b) => b[1] - a[1]); // Sort by count
+
+    let severityLabels = { high: '', medium: '', low: '' };
+    if (incidentArray.length > 0) severityLabels.high = incidentArray[0][0]; // Highest report
+    if (incidentArray.length > 1) severityLabels.medium = incidentArray[1][0]; // Second highest
+    if (incidentArray.length > 2) severityLabels.low = incidentArray[2][0]; // Third highest
+
+    return severityLabels;
+  };
+
+  // Get severity labels after fetching data
+  const severityLabels = getSeverityLabels(severityStats);
 
   const barData = {
     labels: ['Fire', 'Crime or Theft', 'Noise', 'Accident', 'Others'],
     datasets: [{
       label: 'Total Reports',
-      data: [reportStats.fire, reportStats.theft, reportStats.noise, reportStats.accident, reportStats.others],
+      data: [severityStats.fire || 0, severityStats.theft || 0, severityStats.noise || 0, severityStats.accident || 0, severityStats.others || 0],
       backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#FF9F40'],
     }]
   };
@@ -92,31 +90,22 @@ const MonthlyAnalytics = () => {
     scales: {
       y: {
         beginAtZero: true,
-        ticks: {
-          color: 'black',
-        },
+        ticks: { color: 'black' },
       },
       x: {
-        ticks: {
-          color: 'black',
-        },
+        ticks: { color: 'black' },
       },
     },
     plugins: {
       legend: {
         position: 'top',
-        labels: {
-          color: 'white',
-        },
+        labels: { color: 'white' },
       },
       datalabels: {
         color: 'black',
         anchor: 'end',
         align: 'top',
-        font: {
-          size: 12,
-          weight: 'bold',
-        },
+        font: { size: 12, weight: 'bold' },
       },
     },
   };
@@ -129,31 +118,60 @@ const MonthlyAnalytics = () => {
   };
 
   const severityPieData = {
-    labels: ['High (10+ Reports)', 'Medium (6-10 Reports)', 'Low (1-5 Reports)'],
+    labels: ['Fire', 'Crime or Theft', 'Noise', 'Accident', 'Others'],
     datasets: [{
-      data: [severityStats.high, severityStats.medium, severityStats.low],
-      backgroundColor: ['#FF0000', '#FFA500', '#FFFF00'],
+      data: [severityStats.fire || 0, severityStats.theft || 0, severityStats.noise || 0, severityStats.accident || 0, severityStats.others || 0],
+      backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#FF9F40'],
     }]
   };
 
   const pieOptions = {
     responsive: true,
-    maintainAspectRatio: false,  // Important to fit the pie inside the container
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         position: 'right',
         labels: {
-          color: 'white',
+          color: 'white', // Ensures legend text color is white
+          font: {
+            size: 12, // Adjusts the font size (optional)
+            weight: 'bold', // Optional: Makes the font bold
+          },
           boxWidth: 20,
           padding: 15,
-        },
+          // Custom legend to display High, Medium, Low with matching report colors
+          generateLabels: (chart) => {
+            const { high, medium, low } = severityLabels;
+            const colors = {
+              fire: '#FF6384',
+              theft: '#36A2EB',
+              noise: '#FFCE56',
+              accident: '#4BC0C0',
+              others: '#FF9F40',
+            };
+            return [
+              {
+                text: `High: ${high}`, // Highest reported
+                fillStyle: colors[high],  // Color of the most reported incident
+                fontColor: 'white', // Set individual legend text color to white
+              },
+              {
+                text: `Medium: ${medium}`, // Second highest
+                fillStyle: colors[medium], // Color for the second
+                fontColor: 'white', // Set individual legend text color to white
+              },
+              {
+                text: `Low: ${low}`, // Third highest
+                fillStyle: colors[low], // Color for the third
+                fontColor: 'white', // Set individual legend text color to white
+              },
+            ];
+          }
+        }
       },
       datalabels: {
         color: 'white',
-        font: {
-          weight: 'bold',
-          size: 9,
-        },
+        font: { weight: 'bold', size: 9 },
         formatter: (value, context) => {
           const total = context.chart._metasets[0].total;
           const percentage = ((value / total) * 100).toFixed(0);
@@ -162,6 +180,9 @@ const MonthlyAnalytics = () => {
       },
     },
   };
+
+  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const handleMonthChange = (event) => setCurrentMonth(parseInt(event.target.value, 10));
 
   return (
     <div>
@@ -191,7 +212,6 @@ const MonthlyAnalytics = () => {
             </div>
           </div>
 
-          {/* Report Summary Section */}
           <div className="flex flex-col space-y-2 lg:w-[300px] mt-[20px]">
             <div className="h-[90px] bg-[#8A252C] text-white p-2 rounded-lg shadow-md flex flex-col justify-center items-center">
               <h2 className="text-sm font-bold">TOTAL OF REPORTS</h2>
@@ -201,25 +221,15 @@ const MonthlyAnalytics = () => {
             {/* Resolution Status Section */}
             <div className="bg-white p-4 rounded-lg shadow-md h-[195px]">
               <h2 className="text-md font-bold mb-2">Resolution Status</h2>
-              <div className="flex justify-around mb-2">
-                <div className="flex items-center">
-                  <div className="w-2 h-2 bg-green-500 mr-2"></div>
-                  <p className="text-xs">Resolved</p>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-2 h-2 bg-red-500 mr-2"></div>
-                  <p className="text-xs">Unresolved</p>
-                </div>
-              </div>
-              <div className="w-full h-[110px] flex justify-center items-center">
-                <Pie data={resolutionPieData} options={pieOptions} />
+              <div className="h-[120px] w-full">
+                <Pie data={resolutionPieData} options={{ responsive: true, maintainAspectRatio: false }} />
               </div>
             </div>
 
-            {/* Incident Severity Section */}
+            {/* Severity Status Section */}
             <div className="bg-[#8A252C] p-4 rounded-lg shadow-md h-[185px]">
-              <h2 className="text-md font-bold text-white">Incident Severity</h2>
-              <div className="w-full h-[130px]">
+              <h2 className="text-md font-bold mb-2 text-white">Severity Status</h2>
+              <div className="h-[130px] w-full">
                 <Pie data={severityPieData} options={pieOptions} />
               </div>
             </div>

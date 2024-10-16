@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import "./map.css"; // You can keep this if you have additional styles
+import "./map.css"; 
 import redIconUrl from "../assets/redicon.png";
 import greenIconUrl from "../assets/greenicon.png";
 import yellowIconUrl from "../assets/yellowicon.png";
@@ -42,7 +42,8 @@ const Map = ({ selectedCoordinates, data }) => {
   const mapRef = useRef();
   const [selectedMarker, setSelectedMarker] = useState(null);
   const [selectedReport, setSelectedReport] = useState(null);
-  const [zoom, setZoom] = useState(false); // State for zoomed image
+  const [zoom, setZoom] = useState(false);
+  const [shouldFlyTo, setShouldFlyTo] = useState(true); // Track if we should fly to the marker
 
   useEffect(() => {
     if (selectedCoordinates && mapRef.current) {
@@ -50,7 +51,12 @@ const Map = ({ selectedCoordinates, data }) => {
 
       if (latitude && longitude) {
         setSelectedMarker({ latitude, longitude });
-        mapRef.current.flyTo([latitude, longitude], 17);
+
+        // Fly to the marker only if shouldFlyTo is true
+        if (shouldFlyTo) {
+          mapRef.current.flyTo([latitude, longitude], 17);
+          setShouldFlyTo(false); // Prevent further auto-flying
+        }
 
         const matchedReport = data.find((report) => {
           const location = parseLocation(report.location);
@@ -64,7 +70,7 @@ const Map = ({ selectedCoordinates, data }) => {
         setSelectedReport(matchedReport);
       }
     }
-  }, [selectedCoordinates, data]);
+  }, [selectedCoordinates, data, shouldFlyTo]);
 
   const parseLocation = (location) => {
     const regex = /Latitude:\s*([0-9.-]+),\s*Longitude:\s*([0-9.-]+)/;
@@ -89,11 +95,9 @@ const Map = ({ selectedCoordinates, data }) => {
         location: selectedReport.location,
         timestamp: selectedReport.timestamp,
         success: success ? "Yes" : "No",
-        deviceId:selectedReport.deviceId,
-        imageUrl:selectedReport.imageUrl,
-        reportId:selectedReport.reportId
-
-
+        deviceId: selectedReport.deviceId,
+        imageUrl: selectedReport.imageUrl,
+        reportId: selectedReport.reportId,
       };
       await push(historyRef, dataToPush);
 
@@ -184,8 +188,7 @@ const Map = ({ selectedCoordinates, data }) => {
             <Popup>
               <div>
                 <div>
-                  Clicked Coordinates: {selectedMarker.latitude},{" "}
-                  {selectedMarker.longitude}
+                  Clicked Coordinates: {selectedMarker.latitude}, {selectedMarker.longitude}
                 </div>
                 <h4>Name: {selectedReport.name}</h4>
                 <h4>Type: {selectedReport.type}</h4>
@@ -193,9 +196,7 @@ const Map = ({ selectedCoordinates, data }) => {
                 <div className="relative">
                   <img
                     onClick={() => setZoom(!zoom)}
-                    className={`w-full h-40 object-cover cursor-pointer ${
-                      zoom ? "hidden" : ""
-                    }`}
+                    className={`w-full h-40 object-cover cursor-pointer ${zoom ? "hidden" : ""}`}
                     src={selectedReport.imageUrl}
                     alt=""
                   />
