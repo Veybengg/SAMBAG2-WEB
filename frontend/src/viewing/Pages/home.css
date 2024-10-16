@@ -1,0 +1,9 @@
+.bg-image {
+  background-image: url('../assets/Homepage.jpg');
+  background-size: cover;
+  background-color: #FFF6F0;
+
+  background-size: cover;
+  height: 100%;
+  width: 100%;
+}
