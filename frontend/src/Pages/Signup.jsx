@@ -49,20 +49,20 @@ const Signup = () => {
   };
 
   return (
-    <div className="overflow-hidden h-[120vh]">
+    <div className="overflow-hidden min-h-screen flex flex-col">
       <AnalyticsComponent />
-      <div className="relative flex justify-center items-start h-screen">
+      <div className="relative flex flex-col justify-center items-center flex-grow">
         <img
-          className="bg-cover w-full h-full absolute brightness-75"
+          className="absolute inset-0 w-full h-full object-cover brightness-75"
           src={backgroundImg}
           alt="Background"
         />
-        <div className="max-w-md w-full h-[80%] p-6 rounded-lg bg-gradient-to-b from-[#773734] to-[#FFF6F0] relative mt-[3%]">
-          <h2 className="text-2xl font-bold text-center mb-2">Create Account</h2>
+        <div className="max-w-md w-[90%] p-6 rounded-lg bg-gradient-to-b from-[#773734] to-[#FFF6F0] relative mt-10 sm:mt-16 md:mt-24 lg:mt-10">
+          <h2 className="text-2xl font-bold text-center mb-4">Create Account</h2>
           <form onSubmit={handleSignup}>
             <div className="flex flex-col gap-4">
               {/* Username and Email */}
-              <div className="flex justify-between gap-4">
+              <div className="flex flex-col sm:flex-row gap-4">
                 {/* Username */}
                 <div className="flex flex-col w-full">
                   <label className="font-bold" htmlFor="username">Username:</label>
@@ -163,10 +163,10 @@ const Signup = () => {
                 </select>
               </div>
               {/* Submit Button */}
-              <div className="flex justify-center items-center mt-6 text-white">
+              <div className="flex justify-center items-center mt-6">
                 <button
                   type="submit"
-                  className="bg-[#8A252C] py-2 px-4 w-full rounded-md flex justify-center items-center"
+                  className="bg-[#8A252C] py-2 px-4 w-full rounded-md flex justify-center items-center text-white"
                   disabled={isLoading}
                 >
                   {isLoading ? (

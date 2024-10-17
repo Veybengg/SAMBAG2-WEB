@@ -7,7 +7,6 @@ import Signup from './Pages/Signup';
 import MapDashboard from './Pages/Map/MapDashboard';
 import { useAuthStore } from './Frontend-auth/auth.controller';
 import { Navigate } from 'react-router-dom';
-
 import MonthlyAnalytics from './Pages/Map/MonthlyAnalytics';
 import AnnualAnalytics from './Pages/Map/AnnualAnalytics';
 import YearlyAnalytics from './Pages/Map/YearlyAnalytics';
@@ -17,10 +16,11 @@ import Navbar from '../src/viewing/Header/Navbar';
 import ChangePassword from './Pages/ChangePassword';
 import Headroom from 'react-headroom';
 import Layout from './viewing/Pages/Layout';
+import { faSpinner } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 const ProtectedRoutes = ({ children }) => {
   const { isAuthenticated, role } = useAuthStore();
-
   if (!isAuthenticated && !role) {
     return <Navigate to='/login' replace />;
   }
@@ -29,7 +29,6 @@ const ProtectedRoutes = ({ children }) => {
 
 const RedirectAuthenticatedUser = ({ children }) => {
   const { isAuthenticated, role } = useAuthStore();
-
   if (isAuthenticated) {
     if (role === 'admin' || role === 'employee') {
       return <Navigate to='/map-dashboard' replace />;
@@ -41,22 +40,28 @@ const RedirectAuthenticatedUser = ({ children }) => {
 function App() {
   const { checkingAuth, isAuthenticated, user, role } = useAuthStore();
   const location = useLocation();
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    checkingAuth();
-  }, [checkingAuth]);
+    const checkAuth = async () => {
+      await checkingAuth();
+      setLoading(false);
+    };
 
-  console.log('isAuthenticated', isAuthenticated);
-  console.log('user', user);
-  console.log('role', role);
+    checkAuth();
+  }, [checkingAuth]);
 
   // Define condition to only show Navbar on root path '/'
   const showNavbar = location.pathname === '/';
 
   return (
     <>
+      {loading && (
+        <div className="fixed inset-0 bg-gray-800 bg-opacity-50 z-50 flex justify-center items-center">
+          <FontAwesomeIcon icon={faSpinner} className="animate-spin text-white text-6xl" />
+        </div>
+      )}
       <div>
-        {/* Conditionally render Navbar only on the root path '/' */}
         {showNavbar && (
           <Headroom>
             <Navbar />
@@ -122,11 +127,7 @@ function App() {
           />
           <Route
             path='/change-password'
-            element={
-             
-                <ChangePassword />
-              
-            }
+            element={<ChangePassword />}
           />
           <Route path='/reset-password' element={<ForgotPass />} />
         </Routes>

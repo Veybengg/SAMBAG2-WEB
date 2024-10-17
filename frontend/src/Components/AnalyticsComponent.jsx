@@ -36,9 +36,9 @@ const AnalyticsComponent = () => {
 
       {/* Main Content */}
       <div className='grid grid-cols-3'>
-        <a className='bg-[#8A252C] flex justify-center items-center text-white py-3' href="/map-dashboard">
+        <button className='bg-[#8A252C] flex justify-center items-center text-white py-3' onClick={() => handleNavigation('/map-dashboard')}>
           <h1>Todays Reports</h1>
-        </a>
+        </button>
         <div className='bg-[#801B22] text-white flex justify-center items-center gap-3 relative'>
           <button className='flex gap-2' onClick={() => setShowAnalytics(!analytics)}>
             <h1><FontAwesomeIcon icon={faChartSimple} /> Analytics</h1>

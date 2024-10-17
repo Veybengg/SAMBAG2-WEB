@@ -57,7 +57,7 @@ const ChangePassword = () => {
           src={backgroundImg}
           alt="Background"
         />
-        <div className="max-w-md w-full p-6 rounded-lg bg-gradient-to-b from-[#773734] to-[#FFF6F0] relative mt-[-10%]">
+        <div className="max-w-md w-[90%] p-6 rounded-lg bg-gradient-to-b from-[#773734] to-[#FFF6F0] relative mt-[-10%]">
           <h2 className="text-2xl font-bold text-center mb-6">Change Password</h2>
           <form onSubmit={handleChangePassword}>
             <div className="flex flex-col gap-4">
