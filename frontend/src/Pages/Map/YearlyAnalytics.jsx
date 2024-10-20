@@ -12,7 +12,6 @@ import others from '../../assets/others.png';
 
 ChartJS.register(CategoryScale, LinearScale, LineElement, PointElement, ArcElement, Title, Tooltip, Legend);
 
-// Map report types to corresponding icons
 const getIncidentImage = (type) => {
   const normalizedType = type.trim().toUpperCase();
 
@@ -20,7 +19,7 @@ const getIncidentImage = (type) => {
   if (normalizedType === 'CRIME OR THIEF') return thief;
   if (normalizedType === 'NOISE') return noise;
   if (normalizedType === 'ACCIDENT') return accident;
-  return others; // Default to 'OTHERS' if no match
+  return others;
 };
 
 const YearlyAnalytics = () => {
@@ -36,7 +35,7 @@ const YearlyAnalytics = () => {
   const [mostCommonReport, setMostCommonReport] = useState({ type: 'Noise', count: 0 });
   const [severityStats, setSeverityStats] = useState({ fire: 0, theft: 0, noise: 0, accident: 0, others: 0 });
   const [resolutionStats, setResolutionStats] = useState({ resolved: 0, unresolved: 0 });
-  
+
   const fetchData = async (year) => {
     const reportRef = ref(database, 'History');
 
@@ -56,14 +55,12 @@ const YearlyAnalytics = () => {
 
           if (reportYear === year) {
             totalCount++;
-            // Count types of incidents
             if (report.type === 'NOISE') noiseCount++;
             else if (report.type === 'CRIME OR THIEF') theftCount++;
             else if (report.type === 'FIRE') fireCount++;
             else if (report.type === 'ACCIDENT') accidentCount++;
-            else othersCount++; // Count for 'OTHERS'
+            else othersCount++;
 
-            // Check the success field for resolution status
             if (report.success === 'Yes') {
               resolvedCount++;
             } else {
@@ -73,8 +70,6 @@ const YearlyAnalytics = () => {
         });
 
         setTotalReports(totalCount);
-        
-        // Determine the most common report type
         const mostCommon = Math.max(noiseCount, theftCount, fireCount, accidentCount, othersCount);
         if (mostCommon === noiseCount) setMostCommonReport({ type: 'Noise', count: noiseCount });
         else if (mostCommon === theftCount) setMostCommonReport({ type: 'Thief', count: theftCount });
@@ -82,13 +77,11 @@ const YearlyAnalytics = () => {
         else if (mostCommon === accidentCount) setMostCommonReport({ type: 'Accident', count: accidentCount });
         else setMostCommonReport({ type: 'Others', count: othersCount });
 
-        // Calculate severity levels for the whole year
         let incidentCounts = { fire: fireCount, theft: theftCount, noise: noiseCount, accident: accidentCount, others: othersCount };
         
         setSeverityStats(incidentCounts);
         setResolutionStats({ resolved: resolvedCount, unresolved: unresolvedCount });
 
-        // Data for the line chart (per month)
         const noiseCounts = [], thiefCounts = [], fireCounts = [], accidentCounts = [], othersCounts = [];
         for (let month = 0; month < 12; month++) {
           const monthlyReports = reportList.filter(r => new Date(r.timestamp).getMonth() === month && new Date(r.timestamp).getFullYear() === year);
@@ -96,7 +89,7 @@ const YearlyAnalytics = () => {
           thiefCounts.push(monthlyReports.filter(r => r.type === 'CRIME OR THIEF').length);
           fireCounts.push(monthlyReports.filter(r => r.type === 'FIRE').length);
           accidentCounts.push(monthlyReports.filter(r => r.type === 'ACCIDENT').length);
-          othersCounts.push(monthlyReports.filter(r => r.type === 'OTHERS').length); // Count for 'OTHERS'
+          othersCounts.push(monthlyReports.filter(r => r.type === 'OTHERS').length);
         }
 
         setData({
@@ -122,14 +115,14 @@ const YearlyAnalytics = () => {
 
   const getSeverityLabels = (incidentCounts) => {
     const incidentArray = Object.entries(incidentCounts)
-      .filter(([_, count]) => count > 0); // Filter out zero counts
+      .filter(([_, count]) => count > 0);
   
-    incidentArray.sort((a, b) => b[1] - a[1]); // Sort by count
+    incidentArray.sort((a, b) => b[1] - a[1]);
   
     let severityLabels = { high: '', medium: '', low: '' };
-    if (incidentArray.length > 0) severityLabels.high = incidentArray[0][0]; // Highest report
-    if (incidentArray.length > 1) severityLabels.medium = incidentArray[1][0]; // Second highest
-    if (incidentArray.length > 2) severityLabels.low = incidentArray[2][0]; // Third highest
+    if (incidentArray.length > 0) severityLabels.high = incidentArray[0][0];
+    if (incidentArray.length > 1) severityLabels.medium = incidentArray[1][0];
+    if (incidentArray.length > 2) severityLabels.low = incidentArray[2][0];
   
     return severityLabels;
   };
@@ -179,7 +172,7 @@ const YearlyAnalytics = () => {
         fill: true,
         tension: 0.4,
       },
-    ],
+    ],  
   };
 
   const severityPieData = {
@@ -264,14 +257,16 @@ const YearlyAnalytics = () => {
   };
 
   return (
-    <div>
-      <AnalyticsComponent />
-      <div className="flex flex-col items-center justify-center space-y-0">
-        <div className="flex flex-col items-center justify-center">
-          <div className="flex items-center">
+    <>
+    <AnalyticsComponent/>
+    <div className="flex flex-col items-center justify-center p-4">
+      
+      <div className="flex flex-col items-center justify-center w-full">
+        <div className="flex flex-col items-center mb-4">
+          <div className="flex items-center mb-2">
             <h1 className="text-xl font-bold mr-4">Yearly Report</h1>
             <label htmlFor="year" className="text-lg mr-2">Select Year:</label>
-            <select id="year" value={currentYear} onChange={handleYearChange} className="border p-2 rounded mb-2">
+            <select id="year" value={currentYear} onChange={handleYearChange} className="border p-2 rounded">
               {Array.from({ length: 11 }, (_, i) => 2024 + i).map((year) => (
                 <option key={year} value={year}>{year}</option>
               ))}
@@ -280,20 +275,20 @@ const YearlyAnalytics = () => {
         </div>
 
         {/* Line Chart */}
-        <div className="w-[100rem] max-w-6xl" style={{ height: '260px', marginBottom: '2rem' }}>
+        <div className="w-full max-w-6xl" style={{ height: '260px', marginBottom: '2rem' }}>
           <Line data={chartData} options={pieOptions2} />
         </div>
 
         {/* Summary Cards */}
-        <div className="flex flex-wrap justify-around w-full max-w-5xl space-x-2 items-center ">
+        <div className="flex flex-wrap justify-around w-full max-w-5xl space-y-4 md:space-y-0 md:space-x-4">
           {/* Total Reports */}
-          <div className="bg-[#8A252C] text-white p-4 rounded-lg shadow-md text-center w-[200px] h-[165px] flex flex-col justify-center items-center">
+          <div className="bg-[#8A252C] text-white p-4 rounded-lg shadow-md text-center flex flex-col justify-center items-center w-full md:w-[200px]">
             <h2 className="text-md font-bold">Total Reports</h2>
             <p className="text-3xl font-bold">{totalReports}</p>
           </div>
 
           {/* Most Common Report */}
-          <div className="bg-white text-black p-4 rounded-lg shadow-md text-center w-[250px] h-[165px] flex flex-col justify-center items-center">
+          <div className="bg-white text-black p-4 rounded-lg shadow-md text-center flex flex-col justify-center items-center w-full md:w-[250px]">
             <h2 className="text-sm font-bold">MOST COMMON REPORT</h2>
             <div className="flex items-center mt-2">
               <img src={getIncidentImage(mostCommonReport.type)} alt={mostCommonReport.type} className="w-8 h-8 mr-2" />
@@ -307,7 +302,7 @@ const YearlyAnalytics = () => {
           </div>
 
           {/* Incident Severity */}
-          <div className="bg-[#8A252C] p-4 rounded-lg shadow-md h-[165px]">
+          <div className="bg-[#8A252C] p-4 rounded-lg shadow-md w-full md:w-[250px]">
             <h2 className="text-sm font-bold text-white mb-2">Incident Severity</h2>
             <div className="w-full h-[100px] flex justify-center items-center">
               <Pie data={severityPieData} options={pieOptions3} />
@@ -315,7 +310,7 @@ const YearlyAnalytics = () => {
           </div>
 
           {/* Resolution Status */}
-          <div className="bg-white p-4 rounded-lg shadow-md h-[165px]">
+          <div className="bg-white p-4 rounded-lg shadow-md w-full md:w-[250px]">
             <div className="text-center">
               <h2 className="text-md font-bold mb-2">Resolution Status</h2>
               <div className="flex justify-around mb-2">
@@ -336,6 +331,7 @@ const YearlyAnalytics = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

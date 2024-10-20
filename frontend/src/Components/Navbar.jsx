@@ -46,13 +46,6 @@ const Navbar = () => {
           </button>
           {showSetting && (
             <div className='absolute bg-white flex flex-col justify-center py-1 px-1 left-1/2 transform -translate-x-1/2 rounded-md text-sm z-50'>
-              <button 
-                onClick={() => handleActionWithDelay(forLogout, '/login')} 
-                className='flex items-center px-1 py-0.5 gap-2 hover:bg-[#801B22] hover:text-white'
-              >
-                <FontAwesomeIcon icon={faRightFromBracket} />
-                Logout
-              </button>
               {role === 'admin' && (
                 <button 
                   onClick={() => handleActionWithDelay(null, '/signup')} 
@@ -68,6 +61,13 @@ const Navbar = () => {
               >
                 <FontAwesomeIcon icon={faLock} />
                 Change Password
+              </button>
+              <button 
+                onClick={() => handleActionWithDelay(forLogout, '/login')} 
+                className='flex items-center px-1 py-0.5 gap-2 hover:bg-[#801B22] hover:text-white'
+              >
+                <FontAwesomeIcon icon={faRightFromBracket} />
+                Logout
               </button>
             </div>
           )}
