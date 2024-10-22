@@ -226,7 +226,7 @@ const Map = ({ selectedCoordinates, data }) => {
                 <div className="relative">
                   <img
                     onClick={() => setZoom(true)}
-                    className={`w-full h-40 object-cover cursor-pointer`}
+                    className={`w-full h-40 object-fit cursor-pointer`}
                     src={getImageUrl(selectedReport.imageUrl)}
                     alt=""
                   />

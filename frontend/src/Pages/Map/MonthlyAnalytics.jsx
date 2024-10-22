@@ -186,7 +186,7 @@ const MonthlyAnalytics = () => {
   const handleMonthChange = (event) => setCurrentMonth(parseInt(event.target.value, 10));
 
   return (
-    <div className="p-4">
+    <div>
       <AnalyticsComponent />
       <div className="container mx-auto">
         <div className="flex flex-col lg:flex-row items-start gap-6">
@@ -229,7 +229,7 @@ const MonthlyAnalytics = () => {
 
             {/* Severity Status Section */}
             <div className="bg-[#8A252C] p-4 rounded-lg shadow-md flex-1">
-              <h2 className="text-md font-bold mb-2 text-white">Severity Status</h2>
+              <h2 className="text-md font-bold mb-2 text-white">Occurrences Status</h2>
               <div className="h-32 w-full">
                 <Pie data={severityPieData} options={pieOptions} />
               </div>
