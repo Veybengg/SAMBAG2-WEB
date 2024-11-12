@@ -20,7 +20,7 @@ import noImg from '../../assets/noImg.jpg';
 const locationCache = {}; // Simple in-memory cache for already fetched locations
 
 const fetchAddressWithLocationIQ = async (latitude, longitude, retries = 3) => {
-    const apiKey = 'pk.c30d8633958601a90c3db02c060ae4c8'; // Replace with your LocationIQ API Key
+    const apiKey = ''; // Replace with your LocationIQ API Key
     const cacheKey = `${latitude},${longitude}`;
 
     if (locationCache[cacheKey]) {
